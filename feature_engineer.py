@@ -1,6 +1,7 @@
 import numpy as np
 import pandas as pd
-from utils import calculate_multiplier
+from type_chart import calculate_multiplier
+
 
 def build_features(battles, type_chart):
     initial_matchup = []
