@@ -70,9 +70,11 @@ def build_features(battles, type_chart):
             'p1_mean_def': p1_mean_def,
             'damage_multi_p1p2': damage_multi_p1p2,
             'damage_multi_p2p1': damage_multi_p2p1,
-            'p1_switch_rate': p1_switches / total_turns if total_turns > 0 else 0,
-            'total_turns': total_turns,
-            'player_won': int(player_won) if player_won is not None else 0 # Handle test set
+            #'p1_switch_rate': p1_switches / total_turns if total_turns > 0 else 0,
+           # 'total_turns': total_turns,
+           # 'player_won': int(player_won) if player_won is not None else 0 # Handle test set
+            'player_won': player_won
+            
         }
         
         initial_matchup.append(battle_features)
