@@ -109,13 +109,28 @@ def build_features(battles, type_chart, avrg_stats):
 
         
 
-        
+        # do I need to include also item advantage?
 
 
         # --- TIMELINE FEATURES ---
         timeline = battle.get('battle_timeline', [])
-        total_turns = len(timeline)
-        p1_switches = 0
+        #total_turns = len(timeline)
+        
+        p1_switch , p2_switch = 0, 0 # counter for how many times p1 and p2 switch
+        p1_total_boost, p2_total_boost = 0, 0 # counter for the sum of stat  boost held on each turn
+        p1_status, p2_status = 0, 0 # count total turn with  status conditions like tox, par, etc. for p1/p2
+        p1_super_hit, p2_super_hit = 0, 0 # counter for super-effective move type multiplier (ie, > 1.0)  
+        p1_threat, p2_threat = [], [] # threat score using fatality factor for each turn
+        p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
+        p1_accuracy, p1_power = [], [] # accuracy and power of each p1 move 
+        p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted 
+        p1_plus2_atk, p1_plus2_spe = 0, 0 # boolean, if atk and speed reached +2 (a winning condition)
+        t10_hp_diff, t20_hp_diff = None, None # a snapshot of hp differences at turn 10 and 20
+        
+        
+        
+        
+        
         
         for turn_data in timeline:
             # Count P1 switches
