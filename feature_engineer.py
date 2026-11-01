@@ -1,17 +1,38 @@
 import numpy as np
 import pandas as pd
-from type_chart import calculate_multiplier
+from type_chart import calculate_type_multiplier, get_boost_multiplier
 
 
-def build_features(battles, type_chart):
-    initial_matchup = []
+def calculate_stat_averages(train_data):
+
+    # Calculate the average of stats to later fill if player 2 pokemon is unknown
+    avrg_atk, avrg_def, avrg_spa, avrg_spd = [], [], [], []
+
+    for battle in train_data:
+        for pokemon in battle.get('p1_team_details',[]):
+            avrg_atk.append(pokemon.get(base_atk,0))
+            avrg_def.append(pokemon.get(base_def,0))
+            avrg_spa.append(pokemon.get(base_spa,0))
+            avrg_spd.append(pokemon.get(base_spd,0))
+            
+    return np.mean(avrg_atk), np.mean(avrg_def), np.mean(avrg_spa), np.mean(avrg_spd) 
+
+            
+def build_features(battles, type_chart, avrg_stats):
+
+
+    avrg_atk, avrg_def, avrg_spa, avrg_spd = avrg_stats
+
+    
+    pokemon_battle = []
     
     for battle in battles:
         battle_id = battle.get('battle_id')
         player_won = battle.get('player_won', None)
         
-        # --- STATIC FEATURES ---
+        # --- STATIC FEATURES (INITIAL MATCH UP)  ---
         p1_team = battle.get('p1_team_details', [])
+        
         p1_lead = p1_team[0] if len(p1_team) > 0 else {}
         p2_lead = battle.get('p2_lead_details', {}) or {}
 
@@ -21,13 +42,18 @@ def build_features(battles, type_chart):
         p1_lead_spa = p1_lead.get('base_spa', 0)
         p1_lead_spd = p1_lead.get('base_spd', 0)
         p1_lead_spe = p1_lead.get('base_spe', 0)
-        
-        p1_mean_hp = np.mean([p.get('base_hp', 0) for p in p1_team])
-        p1_mean_spe = np.mean([p.get('base_spe', 0) for p in p1_team])
-        p1_mean_atk = np.mean([p.get('base_atk', 0) for p in p1_team])
-        p1_mean_def = np.mean([p.get('base_def', 0) for p in p1_team])
 
-        p1_lead_types = p1_lead.get('types', [])
+        p1_stats = {
+
+            'hp': p1_lead_hp
+            'atk': p1_lead_atk
+            'def': p1_lead_def
+            'spa': p1_lead_spa
+            'spd': p1_lead_spd
+            'spe': p1_lead_spe
+            
+        }
+
 
         p2_lead_hp = p2_lead.get('base_hp', 0)
         p2_lead_atk = p2_lead.get('base_atk', 0)
@@ -36,12 +62,55 @@ def build_features(battles, type_chart):
         p2_lead_spd = p2_lead.get('base_spd', 0)
         p2_lead_spe = p2_lead.get('base_spe', 0)
 
+
+        
+        p2_stats = {
+
+            'hp': p2_lead_hp
+            'atk': p2_lead_atk
+            'def': p2_lead_def
+            'spa': p2_lead_spa
+            'spd': p2_lead_spd
+            'spe': p2_lead_spe
+            
+        }
+
+
+        p1_lead_types = p1_lead.get('types', [])
         p2_lead_types = p2_lead.get('types', [])
+
+        # Initial Speed matchup
 
         is_p1_faster = 1 if p1_lead_spe > p2_lead_spe else 0
         
-        damage_multi_p1p2 = calculate_multiplier(type_chart, p1_lead_types, p2_lead_types)
-        damage_multi_p2p1 = calculate_multiplier(type_chart, p2_lead_types, p1_lead_types)
+        damage_multi_p1p2 = calculate_type_multiplier(type_chart, p1_lead_types, p2_lead_types)
+        damage_multi_p2p1 = calculate_type_multiplier(type_chart, p2_lead_types, p1_lead_types)
+
+
+        # We can introduce a damage_capacity or we can call fatality factor
+        # fatality_factor = [(Attack/Defense)*type_multiplier]/ hp
+        # If we do fatality_factor_p1p2 --> we get a number which reflect on how much hp
+        # of p2 lost. We can do the same for p2 on p1
+
+        #attack-defense-ratio = max(Value1, Value2)
+        # Value1 = Atk/max(Def)
+        # Value2 = Spa/max(Spd)
+
+        # fatality_factor = (attack-defense-ratio*type_multiplier)/hp of defending
+        
+        p1_ad_ratio = max(p1_stats['atk']/max(p2_stats['def'],1), p1_stats['spa']/max(p2_stats['spd'],1))
+
+        fatality_factor_p1p2 = (p1_ad_ratio*damage_multi_p1p2)/max(p2_stats['hp'],1)
+
+
+        p2_ad_ratio = max(p2_stats['atk']/max(p1_stats['def'],1), p2_stats['spa']/max(p1_stats['spd'],1))
+
+        fatality_factor_p2p1 = (p2_ad_ratio*damage_multi_p2p1)/max(p1_stats['hp'],1)
+
+        
+
+        
+
 
         # --- TIMELINE FEATURES ---
         timeline = battle.get('battle_timeline', [])
