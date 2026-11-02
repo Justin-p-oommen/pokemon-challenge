@@ -3,7 +3,7 @@ from sklearn.linear_model import LogisticRegression
 from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
-from sklearn.model_selection import train_test_split
+from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
 
 
@@ -17,7 +17,7 @@ def get_logistic_regression():
 def get_random_forest():
     # returns a regularized Random Forest
     return RandomForestClassifier(
-        n_estimators=300, max_depth=10, min_samples_leaf=10, random_state=42, n_jobs=-1
+        n_estimators=300, max_depth=6, min_samples_leaf=30, random_state=42, n_jobs=-1
     )
 
 def get_tuned_xgboost():
@@ -30,7 +30,7 @@ def get_tuned_xgboost():
 
 
 
-def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols=['battle_id']):
+def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols=['battle_id'], n_splits=5):
 
     print(f"\n{'='*45}")
     print(f"TRAINING: {model_name}")
@@ -40,6 +40,8 @@ def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols
     X = df.drop(columns=drop_cols + [target_col])
     y = df[target_col]
 
+    print("--- 80/20 Split (Checking Overfitting) ---")
+    
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
@@ -59,8 +61,22 @@ def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols
         print(" High Overfitting !!!")
     elif gap < -0.02:
         print(" No Overfitting. Generalizes perfectly.")
-
+        
+    # K-fold validation
+    print(f"\n--- {n_splits}-Fold Stratified Cross-Validation ---")
     
+    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    cv_scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
+    
+    for i, score in enumerate(cv_scores):
+        print(f"Fold {i+1}: {score * 100:.2f}%")
+        
+    print(f"\nMean CV Accuracy: {cv_scores.mean() * 100:.2f}% (+/- {cv_scores.std() * 100:.2f}%)")
+
+    # for the whole train.json
+    print("\nFitting final model on 100% of the data...")
+    model.fit(X, y)
+        
     return model
 
 def get_feature_importance(df, target_col='player_won', drop_cols=['battle_id']):
