@@ -329,12 +329,12 @@ def build_features(battles, type_chart, avrg_stats):
         #  all features into one dictionary
         battle_features = {
             'battle_id': battle_id,
-            'lead_hp_diff': p1_stats['hp'] - p2_stats['hp'],
-            'lead_atk_diff': p1_stats['atk'] - p2_stats['atk'],
-            'lead_def_diff': p1_stats['def'] - p2_stats['def'],
-            'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
-            'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
-            'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
+            #'lead_hp_diff': p1_stats['hp'] - p2_stats['hp'],
+            #'lead_atk_diff': p1_stats['atk'] - p2_stats['atk'],
+            #'lead_def_diff': p1_stats['def'] - p2_stats['def'],
+            #'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
+            #'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
+            #'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
             'is_p1_faster': is_p1_faster,
             'damage_multi_lead_p1p2': damage_multi_lead_p1p2,
             'damage_multi_lead_p2p1': damage_multi_lead_p2p1,
