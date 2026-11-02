@@ -127,6 +127,7 @@ def build_features(battles, type_chart, avrg_stats):
         p1_threats, p2_threats = [], [] # threat score using fatality factor for each turn
         p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
         p1_accuracy, p1_power = [], [] # accuracy and power of each p1 move 
+        p2_accuracy, p2_power = [], [] # accuracy and power of each p1 move 
         p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted 
         p1_plus2_atk, p1_plus2_spe = 0, 0 # boolean, if atk and speed reached +2 (a winning condition)
         t10_hp_diff, t20_hp_diff = None, None # a snapshot of hp differences at turn 10 and 20
@@ -235,8 +236,8 @@ def build_features(battles, type_chart, avrg_stats):
 
             # A pokemon with power and alive of player 2 against player 1
             if p2_move and p2_move.get('base_power', 0) > 0 and p2_state.get('hp_pct', 0) > 0:
-                #p1_accuracy.append(p1_move.get('accuracy', 1.0))
-                #p1_power.append(p1_move.get('base_power', 1))
+                p2_accuracy.append(p2_move.get('accuracy', 1.0))
+                p2_power.append(p2_move.get('base_power', 1))
                 # calling the active pokemon of player 1
                 p1_active_pokemon = p1_team_pokemon.get(p1_state.get('name'), {})
                 p1_def, p1_spd = p1_active_pokemon.get('base_def', avrg_def), p1_active_pokemon.get('base_spd', avrg_spd)
@@ -318,11 +319,10 @@ def build_features(battles, type_chart, avrg_stats):
 
         
         p1_avrg_accuracy = np.mean(p1_accuracy) if p1_accuracy else 1.0
-        
-
-        
         p1_power_normalized = (np.mean(p1_power)/100) if p1_power else 0
         
+        p2_avrg_accuracy = np.mean(p2_accuracy) if p2_accuracy else 1.0
+        p2_power_normalized = (np.mean(p2_power)/100) if p2_power else 0
         
         
              
@@ -353,6 +353,9 @@ def build_features(battles, type_chart, avrg_stats):
             'p1_avrg_accuracy': p1_avrg_accuracy,
             'p1_power_normalized': p1_power_normalized,
             'relative_damage_byp1': p1_avrg_accuracy * p1_power_normalized,
+            'p2_avrg_accuracy': p2_avrg_accuracy,
+            'p2_power_normalized': p2_power_normalized,
+            'relative_damage_byp2': p2_avrg_accuracy * p2_power_normalized,
             'net_boosts': net_boosts,
             'net_status': net_status,
             'p1_switch_rate': p1_switch_rate,
