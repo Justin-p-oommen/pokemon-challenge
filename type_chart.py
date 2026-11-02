@@ -16,7 +16,7 @@ def calculate_type_multiplier(type_chart, attacking, defending):
             continue
         total_multi = 1.0
         for def_type in defending:
-            total_multi *= get_multiplier(type_chart, atk_type, def_type)
+            total_multi *= get_type_multiplier(type_chart, atk_type, def_type)
         multiplier.append(total_multi)
 
     if not multiplier:
