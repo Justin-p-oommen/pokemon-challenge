@@ -124,6 +124,8 @@ def build_features(battles, type_chart, avrg_stats):
         p1_total_boost, p2_total_boost = 0, 0 # counter for the sum of stat  boost held on each turn
         p1_status, p2_status = 0, 0 # count total turn with  status conditions like tox, par, etc. for p1/p2
         p1_super_hit, p2_super_hit = 0, 0 # counter for super-effective move type multiplier (ie, > 1.0)  
+        p1_status_moves = 0
+        p1_total_moves = 0
         p1_threats, p2_threats = [], [] # threat score using fatality factor for each turn
         p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
         p1_accuracy, p1_power = [], [] # accuracy and power of each p1 move 
@@ -145,7 +147,12 @@ def build_features(battles, type_chart, avrg_stats):
 
             p2_move = turn_data.get('p2_move_details')
             p2_state = turn_data.get('p2_pokemon_state', {})
-
+    
+            if p1_move is not None:
+                p1_total_moves += 1
+                if p1_move.get('category') == 'status':
+                    p1_status_moves += 1
+            
             # A pokemon fainted or dead when hp becomes 0
             if p1_state.get('hp_pct', 1) == 0:
                 p1_faint_name.add(p1_state.get('name'))
@@ -323,6 +330,8 @@ def build_features(battles, type_chart, avrg_stats):
         
         p2_avrg_accuracy = np.mean(p2_accuracy) if p2_accuracy else 1.0
         p2_power_normalized = (np.mean(p2_power)/100) if p2_power else 0
+
+        p1_status_move_ratio = p1_status_moves / p1_total_moves if p1_total_moves > 0 else 0
         
         
              
@@ -358,6 +367,7 @@ def build_features(battles, type_chart, avrg_stats):
             'relative_damage_byp2': p2_avrg_accuracy * p2_power_normalized,
             'net_boosts': net_boosts,
             'net_status': net_status,
+            'p1_status_move_ratio': p1_status_move_ratio,
             'p1_switch_rate': p1_switch_rate,
             'p2_switch_rate': p2_switch_rate,
             'delta_switch' : p2_switch_rate - p1_switch_rate,
