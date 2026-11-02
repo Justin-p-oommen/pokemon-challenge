@@ -343,7 +343,7 @@ def build_features(battles, type_chart, avrg_stats):
             'last_hp_diff': last_hp_diff,
             't10_hp_diff': t10_hp_diff,
             't20_hp_diff': t20_hp_diff,
-            'hp_shifts': t20_hp_diff - t10_hp_diff
+            'hp_shifts': t20_hp_diff - t10_hp_diff,
             'p1_faints': p1_faints,
             'p2_faints': p2_faints,
             'squad_advantage': squad_advantage,
