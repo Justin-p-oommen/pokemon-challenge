@@ -117,7 +117,7 @@ def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols
     # K-fold validation
     print(f"\n--- {n_splits}-Fold Stratified Cross-Validation ---")
     
-    cv = StratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
+    cv = RepeatedStratifiedKFold(n_splits=n_splits, shuffle=True, random_state=42)
     cv_scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
     
     for i, score in enumerate(cv_scores):
