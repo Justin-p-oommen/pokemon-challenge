@@ -20,6 +20,8 @@ def get_random_forest():
         n_estimators=300, max_depth=6, min_samples_leaf=30, random_state=42, n_jobs=-1
     )
 
+# my model
+'''
 def get_tuned_xgboost():
     # returns the heavily tuned XGBoost model
     return xgb.XGBClassifier(
@@ -27,7 +29,23 @@ def get_tuned_xgboost():
         subsample=0.7, colsample_bytree=0.7, reg_alpha=1.0, reg_lambda=1.0,
         random_state=42, eval_metric='logloss', n_jobs=-1
     )
+'''
 
+# tune1
+def get_tuned_xgboost():
+    return xgb.XGBClassifier(
+        n_estimators=1000,
+        learning_rate=0.01,
+        max_depth=2,
+        min_child_weight=10,
+        subsample=0.7,
+        colsample_bytree=0.7,
+        reg_alpha=2.0,
+        reg_lambda=2.0,
+        random_state=42,
+        eval_metric='logloss',
+        n_jobs=-1
+    )
 
 
 def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols=['battle_id'], n_splits=5):
