@@ -105,6 +105,7 @@ def build_features(battles, type_chart, avrg_stats):
 
         is_p1_faster = 1 if p1_lead_spe > p2_lead_spe else 0
         lead_speed_ratio = p1_lead_spe / max(p2_lead_spe, 1)
+        log_lead_speed_ratio = np.log(max(p1_lead_spe, 1)/max(p2_lead_spe, 1))
         
         damage_multi_lead_p1p2 = calculate_type_multiplier(type_chart, p1_lead_types, p2_lead_types)
         damage_multi_lead_p2p1 = calculate_type_multiplier(type_chart, p2_lead_types, p1_lead_types)
@@ -488,8 +489,9 @@ def build_features(battles, type_chart, avrg_stats):
             #'lead_def_diff': p1_stats['def'] - p2_stats['def'],
             #'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
             #'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
-            #'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
+            'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
             'lead_speed_ratio': lead_speed_ratio,
+            'log_lead_speed_ratio': log_lead_speed_ratio,
             'p1_team_avg_hp': p1_team_avg_hp,
             'p1_team_avg_atk': p1_team_avg_atk,
             'p1_team_avg_def': p1_team_avg_def,
