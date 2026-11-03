@@ -222,7 +222,7 @@ def build_features(battles, type_chart, avrg_stats):
                 p2_def_boost = get_boost_multiplier(p2_boosts.get('def', 0))
                 p2_spd_boost = get_boost_multiplier(p2_boosts.get('spd', 0))
 
-
+                
 
                 if p1_move.get('category') == 'physical':
                     
@@ -234,8 +234,14 @@ def build_features(battles, type_chart, avrg_stats):
 
                 if type_mult > 1.0:
                     p1_super_hit += 1
+
+                move_type = p1_move.get('type')
+                p1_types = p1_active_pokemon.get('types', ['notype'])
+                                
+                p1_stab = 1.5 if move_type in p1_types else 1.0
+                    
                 p2_hp = max(p2_state.get('hp_pct', 1.0), 0.10) # 0.10 is an arbitary value i choose to cap hp(can check other values)
-                fatality_factor = (atk_def_ratio * type_mult * p1_move.get('base_power',1) * p1_move.get('accuracy', 1.0))/p2_hp
+                fatality_factor = (atk_def_ratio * type_mult * p1_stab * p1_move.get('base_power',1) * p1_move.get('accuracy', 1.0))/p2_hp
 
                 p1_threats.append(fatality_factor)
 
@@ -253,8 +259,10 @@ def build_features(battles, type_chart, avrg_stats):
                 # calling the active pokemon of player 2
                 if p2_state.get('name') == p2_lead.get('name'):
                     p2_atk, p2_spa = p2_stats['atk'], p2_stats['spa']
+                    p2_types = p2_lead_types
                 else:
                     p2_atk, p2_spa = avrg_atk, avrg_spa
+                    p2_types = ['notype']
 
                 # player 1 attack and special-attack boost on player 2 pokemon
                 p2_atk_boost = get_boost_multiplier(p2_boosts.get('atk', 0))
@@ -276,8 +284,12 @@ def build_features(battles, type_chart, avrg_stats):
 
                 if type_mult > 1.0:
                     p2_super_hit += 1
+
+                p2_move_type = p2_move.get('type')
+                p2_stab = 1.5 if p2_move_type in p2_types else 1.0
+
                 p1_hp = max(p1_state.get('hp_pct', 1.0), 0.10) # 0.10 is an arbitary value i choose to cap hp(can check other values)
-                fatality_factor = (atk_def_ratio * type_mult * p2_move.get('base_power',1) * p2_move.get('accuracy', 1.0))/p1_hp
+                fatality_factor = (atk_def_ratio * type_mult * p2_stab * p2_move.get('base_power',1) * p2_move.get('accuracy', 1.0))/p1_hp
 
                 p2_threats.append(fatality_factor)
 
