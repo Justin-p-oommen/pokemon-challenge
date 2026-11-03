@@ -291,28 +291,28 @@ def build_features(battles, type_chart, avrg_stats):
 
             # A feature on switch - we have to check at each turn if there is a move
             # and is it alive(this is to distinguish switch from faint)
-            p1_current_name = p1_state.get('name')
-            p1_current_hp = p1_state.get('hp_pct', 1.0)
-            p2_current_name = p2_state.get('name')
-            p2_current_hp = p2_state.get('hp_pct', 1.0)
+            #p1_current_name = p1_state.get('name')
+            #p1_current_hp = p1_state.get('hp_pct', 1.0)
+            #p2_current_name = p2_state.get('name')
+            #p2_current_hp = p2_state.get('hp_pct', 1.0)
             
-            if p1_prev_name is not None and p1_current_name != p1_prev_name:
-                if p1_prev_hp > 0:
-                    p1_switch += 1
+            #if p1_prev_name is not None and p1_current_name != p1_prev_name:
+            #    if p1_prev_hp > 0:
+             #       p1_switch += 1
 
-            if p2_prev_name is not None and p2_current_name != p2_prev_name:
-                if p2_prev_hp > 0:
-                    p2_switch += 1
+           # if p2_prev_name is not None and p2_current_name != p2_prev_name:
+            #    if p2_prev_hp > 0:
+             #       p2_switch += 1
 
-            p1_prev_name = p1_current_name
-            p2_prev_name = p2_current_name
-            p1_prev_hp = p1_current_hp
-            p2_prev_hp = p2_current_hp
+            #p1_prev_name = p1_current_name
+            #p2_prev_name = p2_current_name
+            #p1_prev_hp = p1_current_hp
+            #p2_prev_hp = p2_current_hp
                     
-            # if p1_move is None and p1_state.get('hp_pct', 0) > 0:
-            #    p1_switch += 1
-           # if p2_move is None and p2_state.get('hp_pct', 0) > 0:
-            #    p2_switch += 1
+            if p1_move is None and p1_state.get('hp_pct', 0) > 0:
+                p1_switch += 1
+            if p2_move is None and p2_state.get('hp_pct', 0) > 0:
+                p2_switch += 1
 
 
             
