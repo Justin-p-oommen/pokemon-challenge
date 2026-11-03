@@ -147,7 +147,7 @@ def build_features(battles, type_chart, avrg_stats):
         p1_status_moves = 0
         p1_total_moves = 0
         p2_status_moves = 0
-        p1_total_moves = 0
+        p2_total_moves = 0
 
         p1_threats, p2_threats = [], [] # threat score using fatality factor for each turn
         p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
