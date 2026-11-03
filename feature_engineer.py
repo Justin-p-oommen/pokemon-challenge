@@ -104,6 +104,7 @@ def build_features(battles, type_chart, avrg_stats):
         # Initial Speed matchup
 
         is_p1_faster = 1 if p1_lead_spe > p2_lead_spe else 0
+        lead_speed_ratio = p1_lead_spe / max(p2_lead_spe, 1)
         
         damage_multi_lead_p1p2 = calculate_type_multiplier(type_chart, p1_lead_types, p2_lead_types)
         damage_multi_lead_p2p1 = calculate_type_multiplier(type_chart, p2_lead_types, p1_lead_types)
@@ -145,6 +146,9 @@ def build_features(battles, type_chart, avrg_stats):
         p1_super_hit, p2_super_hit = 0, 0 # counter for super-effective move type multiplier (ie, > 1.0)  
         p1_status_moves = 0
         p1_total_moves = 0
+        p2_status_moves = 0
+        p1_total_moves = 0
+
         p1_threats, p2_threats = [], [] # threat score using fatality factor for each turn
         p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
         p1_accuracy, p1_power = [], [] # accuracy and power of each p1 move 
@@ -156,6 +160,12 @@ def build_features(battles, type_chart, avrg_stats):
         p1_prev_hp = None
         p2_prev_name = None
         p2_prev_hp = None
+
+        # for average boosts
+        p1_sum_off_boost = 0
+        p2_sum_off_boost = 0
+        p1_sum_spe_boost = 0
+        p2_sum_spe_boost = 0
         
         # this is for finding max in each turns
         p1_max_off_boost = 0 # has the max of atk or spa
@@ -185,7 +195,13 @@ def build_features(battles, type_chart, avrg_stats):
                 p1_total_moves += 1
                 if p1_move.get('category') == 'status':
                     p1_status_moves += 1
-            
+
+            if p2_move is not None:
+                p2_total_moves += 1
+                if p2_move.get('category') == 'status':
+                    p2_status_moves += 1
+
+                    
             # A pokemon fainted or dead when hp becomes 0
             if p1_state.get('hp_pct', 1) == 0:
                 p1_faint_name.add(p1_state.get('name'))
@@ -214,6 +230,9 @@ def build_features(battles, type_chart, avrg_stats):
             p1_boost_spa = p1_boosts.get('spa', 0) 
             p1_boost_spe = p1_boosts.get('spe', 0) 
 
+            p1_sum_off_boost += (p1_boost_atk + p1_boost_spa)
+            p1_sum_spe_boost += p1_boost_spe
+
             p1_max_off_boost = max(p1_max_off_boost, p1_boost_atk, p1_boost_spa)
             p1_max_spe_boost = max(p1_max_spe_boost, p1_boost_spe)
 
@@ -231,6 +250,10 @@ def build_features(battles, type_chart, avrg_stats):
             p2_boost_spa = p2_boosts.get('spa', 0) 
             p2_boost_spe = p2_boosts.get('spe', 0) 
 
+            p2_sum_off_boost += (p2_boost_atk + p2_boost_spa)
+            p2_sum_spe_boost += p2_boost_spe
+
+            
             p2_max_off_boost = max(p2_max_off_boost, p2_boost_atk, p2_boost_spa)
             p2_max_spe_boost = max(p2_max_spe_boost, p2_boost_spe)
 
@@ -249,8 +272,8 @@ def build_features(battles, type_chart, avrg_stats):
                 
             
             # later comment out this
-            p1_total_boost += sum(p1_boosts.values())
-            p2_total_boost += sum(p2_boosts.values())
+           # p1_total_boost += sum(p1_boosts.values())
+           # p2_total_boost += sum(p2_boosts.values())
 
 
             # A special coditon for win
@@ -422,6 +445,15 @@ def build_features(battles, type_chart, avrg_stats):
 
         net_boosts = p1_total_boost - p2_total_boost
 
+        # Calculate averages with  total_turns for each battle
+        p1_avg_off_boost = p1_sum_off_boost / total_turns
+        p2_avg_off_boost = p2_sum_off_boost / total_turns
+        net_avg_off_boost = p1_avg_off_boost - p2_avg_off_boost
+
+        p1_avg_spe_boost = p1_sum_spe_boost / total_turns
+        p2_avg_spe_boost = p2_sum_spe_boost / total_turns
+        net_avg_spe_boost = p1_avg_spe_boost - p2_avg_spe_boost
+
         net_max_off_boost =  p1_max_off_boost - p2_max_off_boost
         net_max_spe_boost = p1_max_spe_boost - p2_max_spe_boost
         net_boosted_turns = p1_boosted_turns - p2_boosted_turns 
@@ -444,7 +476,8 @@ def build_features(battles, type_chart, avrg_stats):
         
         
         p1_status_move_ratio = p1_status_moves / p1_total_moves if p1_total_moves > 0 else 0
-        
+        p2_status_move_ratio = p2_status_moves / p2_total_moves if p2_total_moves > 0 else 0
+        delta_status_move_ratio = p1_status_move_ratio - p2_status_move_ratio        
         
              
         #  all features into one dictionary
@@ -456,6 +489,7 @@ def build_features(battles, type_chart, avrg_stats):
             #'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
             #'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
             #'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
+            'lead_speed_ratio': lead_speed_ratio
             'p1_team_avg_hp': p1_team_avg_hp,
             'p1_team_avg_atk': p1_team_avg_atk,
             'p1_team_avg_def': p1_team_avg_def,
@@ -499,7 +533,11 @@ def build_features(battles, type_chart, avrg_stats):
             'net_max_off_boost': net_max_off_boost,
             'net_max_spe_boost': net_max_spe_boost,
             'net_boosted_turns': net_boosted_turns,
+            'net_avg_off_boost': net_avg_off_boost,
+            'net_avg_spe_boost': net_avg_spe_boost,
             'p1_status_move_ratio': p1_status_move_ratio,
+            'p2_status_move_ratio': p2_status_move_ratio,
+            'delta_status_move_ratio': delta_status_move_ratio,
             'p1_switch_rate': p1_switch_rate,
             'p2_switch_rate': p2_switch_rate,
             'delta_switch' : p2_switch_rate - p1_switch_rate,
