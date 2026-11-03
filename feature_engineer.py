@@ -369,8 +369,9 @@ def build_features(battles, type_chart, avrg_stats):
         # The hp difference at the last turn, can be > 30 or < 30, so we take the last element of the list 
        
         last_hp_diff = p1_hp_diff[-1]  if p1_hp_diff else 0
+        mean_hp_diff = np.mean(p1_hp_diff) if p1_hp_diff else 0
+        hp_trajectory = (p1_hp_diff[-1] - p1_hp_diff[0]) if len(p1_hp_diff) > 1 else 0
         
-
 
         if t10_hp_diff is None:
             t10_hp_diff = last_hp_diff
@@ -449,6 +450,8 @@ def build_features(battles, type_chart, avrg_stats):
             't10_hp_diff': t10_hp_diff,
             't20_hp_diff': t20_hp_diff,
             'hp_shifts': t20_hp_diff - t10_hp_diff,
+            'mean_hp_diff': mean_hp_diff,
+            'hp_trajectory': hp_trajectory,
             'p1_faints': p1_faints,
             'p2_faints': p2_faints,
             'squad_advantage': squad_advantage,
