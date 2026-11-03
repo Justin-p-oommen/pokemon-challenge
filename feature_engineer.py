@@ -368,6 +368,7 @@ def build_features(battles, type_chart, avrg_stats):
             'p1_faints': p1_faints,
             'p2_faints': p2_faints,
             'squad_advantage': squad_advantage,
+            'squad_p1_faster': squad_advantage * is_p1_faster,
             'delta_super_hit': delta_super_hit,
             #'p1_plus2_atk': p1_plus2_atk,
             #'p1_plus2_spe': p1_plus2_spe,
