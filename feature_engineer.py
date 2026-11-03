@@ -489,7 +489,7 @@ def build_features(battles, type_chart, avrg_stats):
             #'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
             #'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
             #'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
-            'lead_speed_ratio': lead_speed_ratio
+            'lead_speed_ratio': lead_speed_ratio,
             'p1_team_avg_hp': p1_team_avg_hp,
             'p1_team_avg_atk': p1_team_avg_atk,
             'p1_team_avg_def': p1_team_avg_def,
