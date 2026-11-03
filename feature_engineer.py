@@ -152,6 +152,10 @@ def build_features(battles, type_chart, avrg_stats):
         p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted 
         p1_plus2_atk, p1_plus2_spe = 0, 0 # boolean, if atk and speed reached +2 (a winning condition)
         t10_hp_diff, t20_hp_diff = None, None # a snapshot of hp differences at turn 10 and 20
+        p1_prev_name = None
+        p1_prev_hp = None
+        p2_prev_name = None
+        p2_prev_hp = None
         
         # this is for finding max in each turns
         p1_max_off_boost = 0 # has the max of atk or spa
@@ -264,11 +268,32 @@ def build_features(battles, type_chart, avrg_stats):
 
             # A feature on switch - we have to check at each turn if there is a move
             # and is it alive(this is to distinguish switch from faint)
-            if p1_move is None and p1_state.get('hp_pct', 0) > 0:
-                p1_switch += 1
-            if p2_move is None and p2_state.get('hp_pct', 0) > 0:
-                p2_switch += 1
+            p1_current_name = p1_state.get('name')
+            p1_current_hp = p1_state.get('hp_pct', 1.0)
+            p2_current_name = p2_state.get('name')
+            p2_current_hp = p2_state.get('hp_pct', 1.0)
+            
+            if p1_prev_name is not None and p1_current_name != p1_prev_name:
+                if p1_prev_hp > 0:
+                    p1_switch += 1
 
+            if p2_prev_name is not None and p2_current_name != p2_prev_name:
+                if p2_prev_hp > 0:
+                    p2_switch += 1
+
+            p1_prev_name = p1_current_name
+            p2_prev_name = p2_current_name
+            p1_prev_hp = p1_current_hp
+            p2_prev_hp = p2_current_hp
+                    
+            # if p1_move is None and p1_state.get('hp_pct', 0) > 0:
+            #    p1_switch += 1
+           # if p2_move is None and p2_state.get('hp_pct', 0) > 0:
+            #    p2_switch += 1
+
+
+            
+            
             # A pokemon with power and alive of player 1 against player 2
             if p1_move and p1_move.get('base_power', 0) > 0 and p1_state.get('hp_pct', 0) > 0:
                 p1_accuracy.append(p1_move.get('accuracy', 1.0))
