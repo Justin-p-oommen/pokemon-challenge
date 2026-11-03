@@ -30,7 +30,7 @@ def get_tuned_xgboost():
         random_state=42, eval_metric='logloss', n_jobs=-1
     )
 '''
-'''
+
 # tune1
 def get_tuned_xgboost():
     return xgb.XGBClassifier(
@@ -46,6 +46,7 @@ def get_tuned_xgboost():
         eval_metric='logloss',
         n_jobs=-1
     )
+
 '''
 # tune2
 def get_tuned_xgboost():
@@ -62,7 +63,7 @@ def get_tuned_xgboost():
         eval_metric='logloss',
         n_jobs=-1
     )
-
+'''
 def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols=['battle_id'], n_splits=5):
 
     print(f"\n{'='*45}")
