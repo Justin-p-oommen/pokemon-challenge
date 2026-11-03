@@ -33,6 +33,25 @@ def build_features(battles, type_chart, avrg_stats):
         # --- STATIC FEATURES (INITIAL MATCH UP)  ---
         p1_team = battle.get('p1_team_details', [])
 
+        # full team stat
+        p1_team_hp = [pok.get('base_hp', 0) for pok in p1_team]
+        p1_team_atk = [pok.get('base_atk', 0) for pok in p1_team]
+        p1_team_def = [pok.get('base_def', 0) for pok in p1_team]
+        p1_team_spa = [pok.get('base_spa', 0) for pok in p1_team]
+        p1_team_spd = [pok.get('base_spd', 0) for pok in p1_team]
+        p1_team_spe = [pok.get('base_spe', 0) for pok in p1_team]
+
+        # full team aggregates
+        p1_team_avg_hp = np.mean(p1_team_hp) if p1_team_hp else 0
+        p1_team_avg_atk = np.mean(p1_team_atk) if p1_team_atk else 0
+        p1_team_avg_def = np.mean(p1_team_def) if p1_team_def else 0
+        p1_team_avg_spa = np.mean(p1_team_spa) if p1_team_spa else 0
+        p1_team_avg_spd = np.mean(p1_team_spd) if p1_team_spd else 0
+        p1_team_avg_spe = np.mean(p1_team_spe) if p1_team_spe else 0
+
+        # maximum speed pokemon among 6
+        p1_team_max_spe = max(p1_team_spe) if p1_team_spe else 0 
+        
         # A dictionary used to call base stat of p1 pokemons at each turn during battle
         p1_team_pokemon = {pok['name']: pok for pok in p1_team}
         
@@ -129,12 +148,18 @@ def build_features(battles, type_chart, avrg_stats):
         p1_threats, p2_threats = [], [] # threat score using fatality factor for each turn
         p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
         p1_accuracy, p1_power = [], [] # accuracy and power of each p1 move 
-        p2_accuracy, p2_power = [], [] # accuracy and power of each p1 move 
+        p2_accuracy, p2_power = [], [] # accuracy and power of each p2 move 
         p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted 
         p1_plus2_atk, p1_plus2_spe = 0, 0 # boolean, if atk and speed reached +2 (a winning condition)
         t10_hp_diff, t20_hp_diff = None, None # a snapshot of hp differences at turn 10 and 20
         
-        
+        # this is for finding max in each turns
+        p1_max_off_boost = 0 # has the max of atk or spa
+        p1_max_spe_boost = 0
+
+        # this is to count the number of times the boost is positive in each turns
+        p1_boosted_turns = 0
+        p2_boosted_turns = 0
         
         
         
@@ -177,7 +202,48 @@ def build_features(battles, type_chart, avrg_stats):
               #p1_switches += 1
 
             p1_boosts = p1_state.get('boosts', {})
+            p1_boost_atk = p1_boosts.get('atk', 0) 
+            p1_boost_spa = p1_boosts.get('spa', 0) 
+            p1_boost_spe = p1_boosts.get('spe', 0) 
+
+            p1_max_off_boost = max(p1_max_off_boost, p1_boost_atk, p1_boost_spa)
+            p1_max_spe_boost = max(p1_max_spe_boost, p1_boost_spe)
+
+            # This is to calculate the number which a positive boost stat is maintained for palyer 1
+            is_p1_boosted = False
+            for b in p1_boosts.values():
+                if b > 0:
+                    is_p1_boosted = True
+                    break
+            if is_p1_boosted:
+                p1_boosted_turns += 1
+        
             p2_boosts = p2_state.get('boosts', {})
+            p2_boost_atk = p2_boosts.get('atk', 0) 
+            p2_boost_spa = p2_boosts.get('spa', 0) 
+            p2_boost_spe = p2_boosts.get('spe', 0) 
+
+            p2_max_off_boost = max(p2_max_off_boost, p2_boost_atk, p2_boost_spa)
+            p2_max_spe_boost = max(p2_max_spe_boost, p2_boost_spe)
+
+            # This is to calculate the number which a positive boost stat is maintained for palyer 2
+            is_p2_boosted = False
+            for b in p2_boosts.values():
+                if b > 0:
+                    is_p2_boosted = True
+                    break
+            if is_p2_boosted:
+                p1_boosted_turns += 1
+                
+            net_max_off_boost =  p1_max_off_boost - p2_max_off_boost
+            net_max_spe_boost = p1_max_spe_boost - p2_max_spe_boost
+            net_boosted_turns = p1_boosted_turns - p2_boosted_turns 
+                
+
+
+                
+            
+            # later comment out this
             p1_total_boost += sum(p1_boosts.values())
             p2_total_boost += sum(p2_boosts.values())
 
@@ -312,15 +378,14 @@ def build_features(battles, type_chart, avrg_stats):
 
 
         
-        p1_avrg_threat = np.mean(p1_threats) if p1_threats else 0
-        
-
-        
-        p2_avrg_threat = np.mean(p2_threats) if p2_threats else 0
-        
-
+        p1_avrg_threat = np.log1p(np.mean(p1_threats)) if p1_threats else 0
+        p2_avrg_threat = np.log1p(np.mean(p2_threats)) if p2_threats else 0
         delta_avrg_threat = p1_avrg_threat - p2_avrg_threat
 
+        p1_max_threat = np.log1p(max(p1_threats)) if p1_threats else 0
+        p2_max_threat = np.log1p(max(p2_threats)) if p2_threats else 0
+        delta_max_threat = p1_max_threat - p2_max_threat
+        
         p1_faints = len(p1_faint_name)
         p2_faints = len(p2_faint_name)
 
@@ -343,6 +408,10 @@ def build_features(battles, type_chart, avrg_stats):
         p2_avrg_accuracy = np.mean(p2_accuracy) if p2_accuracy else 1.0
         p2_power_normalized = (np.mean(p2_power)/100) if p2_power else 0
 
+        delta_accuracy = p1_avrg_accuracy - p2_avrg_accuracy
+        delta_power = p1_power_normalized - p2_power_normalized
+        
+        
         p1_status_move_ratio = p1_status_moves / p1_total_moves if p1_total_moves > 0 else 0
         
         
@@ -356,11 +425,21 @@ def build_features(battles, type_chart, avrg_stats):
             #'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
             #'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
             #'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
+            'p1_team_avg_hp': p1_team_avg_hp,
+            'p1_team_avg_atk': p1_team_avg_atk,
+            'p1_team_avg_def': p1_team_avg_def,
+            'p1_team_avg_spa': p1_team_avg_spa,
+            'p1_team_avg_spd': p1_team_avg_spd,
+            'p1_team_avg_spe': p1_team_avg_spe,
+            'p1_team_max_spe': p1_team_max_spe,
             'is_p1_faster': is_p1_faster,
             'damage_multi_lead_p1p2': damage_multi_lead_p1p2,
             'damage_multi_lead_p2p1': damage_multi_lead_p2p1,
             'delta_static_threat': delta_static_threat,
             'delta_avrg_threat': delta_avrg_threat,
+            'p1_max_threat': p1_max_threat,
+            'p2_max_threat': p2_max_threat,
+            'delta_max_threat': delta_max_threat,
             'last_hp_diff': last_hp_diff,
             't10_hp_diff': t10_hp_diff,
             't20_hp_diff': t20_hp_diff,
@@ -374,12 +453,19 @@ def build_features(battles, type_chart, avrg_stats):
             #'p1_plus2_spe': p1_plus2_spe,
             'p1_avrg_accuracy': p1_avrg_accuracy,
             'p1_power_normalized': p1_power_normalized,
+            'p2_avrg_accuracy': p2_avrg_accuracy,
+            'p2_power_normalized': p2_power_normalized,
+            'delta_accuracy': delta_accuracy,
+            'delta_power': delta_power,
             'relative_damage_byp1': p1_avrg_accuracy * p1_power_normalized,
             #'p2_avrg_accuracy': p2_avrg_accuracy,
             #'p2_power_normalized': p2_power_normalized,
             #'relative_damage_byp2': p2_avrg_accuracy * p2_power_normalized,
             'net_boosts': net_boosts,
             'net_status': net_status,
+            'net_max_off_boost': net_max_off_boost,
+            'net_max_spe_boost': net_max_spe_boost,
+            'net_boosted_turns': net_boosted_turns,
             'p1_status_move_ratio': p1_status_move_ratio,
             'p1_switch_rate': p1_switch_rate,
             'p2_switch_rate': p2_switch_rate,
