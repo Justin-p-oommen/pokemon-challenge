@@ -157,6 +157,10 @@ def build_features(battles, type_chart, avrg_stats):
         p1_max_off_boost = 0 # has the max of atk or spa
         p1_max_spe_boost = 0
 
+        p2_max_off_boost = 0 # has the max of atk or spa
+        p2_max_spe_boost = 0
+
+        
         # this is to count the number of times the boost is positive in each turns
         p1_boosted_turns = 0
         p2_boosted_turns = 0
