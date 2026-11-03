@@ -1,6 +1,6 @@
 import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
-from sklearn.ensemble import RandomForestClassifier
+from sklearn.ensemble import RandomForestClassifier, VotingClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, StratifiedKFold, cross_val_score
@@ -64,6 +64,24 @@ def get_tuned_xgboost():
         n_jobs=-1
     )
 '''
+
+# combination of lr and xgb model
+def get_ensemble_model():
+    
+    #Combines Logistic Regression and XGBoost using Soft Voting.
+    #Soft voting averages the predicted probabilities of both models.
+    
+    return VotingClassifier(
+        estimators=[
+            ('lr', get_logistic_regression()),
+            ('xgb', get_tuned_xgboost())
+        ],
+        voting='soft', # Averages probabilities (better than 'hard' voting)
+        n_jobs=-1
+    )
+
+
+
 def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols=['battle_id'], n_splits=5):
 
     print(f"\n{'='*45}")
