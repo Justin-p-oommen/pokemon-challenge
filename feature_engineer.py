@@ -237,11 +237,8 @@ def build_features(battles, type_chart, avrg_stats):
                     is_p2_boosted = True
                     break
             if is_p2_boosted:
-                p1_boosted_turns += 1
+                p2_boosted_turns += 1
                 
-            net_max_off_boost =  p1_max_off_boost - p2_max_off_boost
-            net_max_spe_boost = p1_max_spe_boost - p2_max_spe_boost
-            net_boosted_turns = p1_boosted_turns - p2_boosted_turns 
                 
 
 
@@ -399,6 +396,10 @@ def build_features(battles, type_chart, avrg_stats):
 
         net_boosts = p1_total_boost - p2_total_boost
 
+        net_max_off_boost =  p1_max_off_boost - p2_max_off_boost
+        net_max_spe_boost = p1_max_spe_boost - p2_max_spe_boost
+        net_boosted_turns = p1_boosted_turns - p2_boosted_turns 
+
         net_status = p1_status - p2_status
 
         p1_switch_rate = p1_switch/total_turns
@@ -465,7 +466,7 @@ def build_features(battles, type_chart, avrg_stats):
             #'p2_avrg_accuracy': p2_avrg_accuracy,
             #'p2_power_normalized': p2_power_normalized,
             #'relative_damage_byp2': p2_avrg_accuracy * p2_power_normalized,
-            'net_boosts': net_boosts,
+            #'net_boosts': net_boosts,
             'net_status': net_status,
             'net_max_off_boost': net_max_off_boost,
             'net_max_spe_boost': net_max_spe_boost,
