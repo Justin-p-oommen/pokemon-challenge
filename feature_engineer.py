@@ -189,7 +189,9 @@ def build_features(battles, type_chart, avrg_stats):
         p1_hp_diff = [] # difference between p1 hp and p2 hp  for every turn
         p1_accuracy, p1_power = [], [] # accuracy and power of each p1 move 
         p2_accuracy, p2_power = [], [] # accuracy and power of each p2 move 
-        p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted 
+        p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted
+        p1_first_faint_turn = 30
+        p2_first_faint_turn = 30
         p1_plus2_atk, p1_plus2_spe = 0, 0 # boolean, if atk and speed reached +2 (a winning condition)
         t10_hp_diff, t20_hp_diff = None, None # a snapshot of hp differences at turn 10 and 20
         #p1_prev_name = None
@@ -250,8 +252,10 @@ def build_features(battles, type_chart, avrg_stats):
             # A pokemon fainted or dead when hp becomes 0
             if p1_state.get('hp_pct', 1) == 0:
                 p1_faint_name.add(p1_state.get('name'))
+                if p1_first_faint_turn == 30: p1_first_faint_turn = turn_num
             if p2_state.get('hp_pct', 1) == 0:
                 p2_faint_name.add(p2_state.get('name'))
+                if p2_first_faint_turn == 30: p2_first_faint_turn = turn_num
 
             p1_name = p1_state.get('name')
             if p1_name:
@@ -507,8 +511,22 @@ def build_features(battles, type_chart, avrg_stats):
         # number of pokemon appeared each battle
         p1_team_pok_count = len(p1_current_hp)
         p2_team_pok_count = len(p2_current_hp)
+
+        # healthy and critical counts
+        p1_healthy_count = sum(1 for hp in p1_current_hp.values() if hp > 0.50)
+        p2_healthy_count = sum(1 for hp in p2_current_hp.values() if hp > 0.50)
+        delta_healthy_count = p1_healthy_count - p2_healthy_count
+
+        p1_critical_count = sum(1 for hp in p1_current_hp.values() if 0 < hp < 0.25)
+        p2_critical_count = sum(1 for hp in p2_current_hp.values() if 0 < hp < 0.25)
+        delta_critical_count = p1_critical_count - p2_critical_count
             
-            
+        # 5 turns - ADD TOMORROW
+        
+
+        # Positive means P2 fainted first. Negative means P1 fainted first.
+        first_faint_advantage = p2_first_faint_turn - p1_first_faint_turn 
+        
         
         p1_avrg_threat = np.log1p(np.mean(p1_threats)) if p1_threats else 0
         p2_avrg_threat = np.log1p(np.mean(p2_threats)) if p2_threats else 0
@@ -610,6 +628,9 @@ def build_features(battles, type_chart, avrg_stats):
             'p1_team_pok_count': p1_team_pok_count,
             'p2_team_pok_count': p2_team_pok_count,
             'delta_sum_hp': delta_sum_hp,
+            'delta_healthy_count': delta_healthy_count,
+            'delta_critical_count': delta_critical_count,
+            'first_faint_advantage': first_faint_advantage,
             #'squad_p1_faster': squad_advantage * is_p1_faster,
             'delta_super_hit': delta_super_hit,
             #'p1_plus2_atk': p1_plus2_atk,
