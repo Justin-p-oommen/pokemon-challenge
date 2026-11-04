@@ -33,6 +33,41 @@ def build_features(battles, type_chart, avrg_stats):
         # --- STATIC FEATURES (INITIAL MATCH UP)  ---
         p1_team = battle.get('p1_team_details', [])
 
+        # get all the unique attacking types from the type chart
+        atk_types = set(chart[0] for chart in type_chart.keys() )
+        p1_unique_type = set()
+        p1_weak_count = 0
+        p1_resist_count = 0
+        p1_immune_count = 0
+        
+        for pok in p1_team:
+            p_types = pok.get('types',['notype'])
+
+            # add unique type of p1
+            for type in p_types:
+                if type != 'notype':
+                    p1_unique_type.add(type)
+
+            # check the defensive matchup of p1 type against all the atk types
+            for type in atk_types:
+                multi = calculate_type_multiplier(type_chart, [type], p_types)
+                if multi > 1.0: # p1 is weak
+                    p1_weak_count += 1
+                elif multi == 0.0: 
+                    p1_immune_count += 1
+                elif multi < 1.0:
+                    p1_resist_count += 1
+
+        p1_unique_type_count = len(p1_unique_type)
+
+        # I observed four distinct multiplier classes:
+        # 2.0 (weak), 1.0 (neutral), 0.5 (resist), and 0.0 (immune).
+        # so i put a heuristic sum of these as:
+        # defense_score = (resist + (immune * 2)) - weak
+        p1_defense_score = (p1_resist_count + (p1_immune_count * 2)) - p1_weak_count
+
+        
+
         # full team stat
         p1_team_hp = [pok.get('base_hp', 0) for pok in p1_team]
         p1_team_atk = [pok.get('base_atk', 0) for pok in p1_team]
@@ -157,10 +192,10 @@ def build_features(battles, type_chart, avrg_stats):
         p1_faint_name, p2_faint_name = set(), set() # unique names of pokemon fainted 
         p1_plus2_atk, p1_plus2_spe = 0, 0 # boolean, if atk and speed reached +2 (a winning condition)
         t10_hp_diff, t20_hp_diff = None, None # a snapshot of hp differences at turn 10 and 20
-        p1_prev_name = None
-        p1_prev_hp = None
-        p2_prev_name = None
-        p2_prev_hp = None
+        #p1_prev_name = None
+        #p1_prev_hp = None
+        #p2_prev_name = None
+        #p2_prev_hp = None
 
         # for average boosts
         p1_sum_off_boost = 0
@@ -180,6 +215,11 @@ def build_features(battles, type_chart, avrg_stats):
         p1_boosted_turns = 0
         p2_boosted_turns = 0
         
+        
+        # dict to store the hp of pokemon of p1 and p2 turn by turn
+        p1_current_hp = {}
+        p2_current_hp = {}
+
         
         
         
@@ -208,6 +248,15 @@ def build_features(battles, type_chart, avrg_stats):
                 p1_faint_name.add(p1_state.get('name'))
             if p2_state.get('hp_pct', 1) == 0:
                 p2_faint_name.add(p2_state.get('name'))
+
+            p1_name = p1_state.get('name')
+            if p1_name:
+                p1_current_hp[p1_name] = p1_state.get('hp_pct', 1)
+
+            p2_name = p2_state.get('name')
+            if p2_name:
+                p2_current_hp[p2_name] = p2_state.get('hp_pct', 1)
+                
 
             # Calculate the hp difference between p1 and p2 pokemon at each turn
             current_hp_diff = p1_state.get('hp_pct', 1) - p2_state.get('hp_pct', 1)
@@ -427,7 +476,16 @@ def build_features(battles, type_chart, avrg_stats):
         if t20_hp_diff is None:
             t20_hp_diff = last_hp_diff
 
+        # sum of hp of all pokemon appeared in the battle
+        p1_team_sum_hp = sum(p1_current_hp.values())
+        p2_team_sum_hp = sum(p2_current_hp.values())
+        delta_sum_hp = p1_team_sum_hp - p2_team_sum_hp
 
+        # number of pokemon appeared ach battle
+        p1_team_pok_count = len(p1_current_hp)
+        p2_team_pok_count = len(p2_current_hp)
+            
+            
         
         p1_avrg_threat = np.log1p(np.mean(p1_threats)) if p1_threats else 0
         p2_avrg_threat = np.log1p(np.mean(p2_threats)) if p2_threats else 0
@@ -484,12 +542,12 @@ def build_features(battles, type_chart, avrg_stats):
         #  all features into one dictionary
         battle_features = {
             'battle_id': battle_id,
-            'lead_hp_diff': p1_stats['hp'] - p2_stats['hp'],
-            'lead_atk_diff': p1_stats['atk'] - p2_stats['atk'],
-            'lead_def_diff': p1_stats['def'] - p2_stats['def'],
-            'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
-            'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
-            'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
+            #'lead_hp_diff': p1_stats['hp'] - p2_stats['hp'],
+            #'lead_atk_diff': p1_stats['atk'] - p2_stats['atk'],
+            #'lead_def_diff': p1_stats['def'] - p2_stats['def'],
+            #'lead_spa_diff': p1_stats['spa'] - p2_stats['spa'],
+            #'lead_spd_diff': p1_stats['spd'] - p2_stats['spd'],
+            #'lead_spe_diff': p1_stats['spe'] - p2_stats['spe'],
             'lead_speed_ratio': lead_speed_ratio,
             'log_lead_speed_ratio': log_lead_speed_ratio,
             'p1_team_avg_hp': p1_team_avg_hp,
@@ -499,6 +557,11 @@ def build_features(battles, type_chart, avrg_stats):
             'p1_team_avg_spd': p1_team_avg_spd,
             'p1_team_avg_spe': p1_team_avg_spe,
             'p1_team_max_spe': p1_team_max_spe,
+            'p1_unique_type_count': p1_unique_type_count,
+            'p1_weak_count': p1_weak_count,
+            'p1_resist_count': p1_resist_count,
+            'p1_immune_count': p1_immune_count,
+            'p1_defense_score': p1_defense_score,
             'is_p1_faster': is_p1_faster,
             'damage_multi_lead_p1p2': damage_multi_lead_p1p2,
             'damage_multi_lead_p2p1': damage_multi_lead_p2p1,
@@ -516,6 +579,9 @@ def build_features(battles, type_chart, avrg_stats):
             'p1_faints': p1_faints,
             'p2_faints': p2_faints,
             'squad_advantage': squad_advantage,
+            'p1_team_pok_count': p1_team_pok_count,
+            'p2_team_pok_count': p2_team_pok_count,
+            'delta_sum_hp': delta_sum_hp,
             #'squad_p1_faster': squad_advantage * is_p1_faster,
             'delta_super_hit': delta_super_hit,
             #'p1_plus2_atk': p1_plus2_atk,
