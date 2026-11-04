@@ -540,10 +540,10 @@ def build_features(battles, type_chart, avrg_stats):
         net_max_spe_boost = p1_max_spe_boost - p2_max_spe_boost
         net_boosted_turns = p1_boosted_turns - p2_boosted_turns 
 
-        net_par_turns = p1_par_turns - p2_par_turns,
-        net_slp_turns =  p1_slp_turns - p2_slp_turns,
-        net_brn_turns =  p1_brn_turns - p2_brn_turns,
-        net_tox_turns =  p1_tox_turns - p2_tox_turns,
+        net_par_turns = p1_par_turns - p2_par_turns
+        net_slp_turns =  p1_slp_turns - p2_slp_turns
+        net_brn_turns =  p1_brn_turns - p2_brn_turns
+        net_tox_turns =  p1_tox_turns - p2_tox_turns
         net_status = p1_net_status - p2_net_status
         
 
