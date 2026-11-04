@@ -178,7 +178,7 @@ def build_features(battles, type_chart, avrg_stats):
         
         p1_switch , p2_switch = 0, 0 # counter for how many times p1 and p2 switch
         p1_total_boost, p2_total_boost = 0, 0 # counter for the sum of stat  boost held on each turn
-        p1_status, p2_status = 0, 0 # count total turn with  status conditions like tox, par, etc. for p1/p2
+        p1_net_status, p2_net_status = 0, 0 # count total turn with  status conditions like tox, par, etc. for p1/p2
         p1_super_hit, p2_super_hit = 0, 0 # counter for super-effective move type multiplier (ie, > 1.0)  
         p1_status_moves = 0
         p1_total_moves = 0
@@ -220,7 +220,11 @@ def build_features(battles, type_chart, avrg_stats):
         p1_current_hp = {}
         p2_current_hp = {}
 
-        
+        #  specific status counters
+        p1_par_turns, p2_par_turns = 0, 0
+        p1_slp_turns, p2_slp_turns = 0, 0
+        p1_brn_turns, p2_brn_turns = 0, 0
+        p1_tox_turns, p2_tox_turns = 0, 0
         
         
         for turn_data in timeline:
@@ -334,10 +338,29 @@ def build_features(battles, type_chart, avrg_stats):
 
 
             # Making a feature out of status
-            if p1_state.get('status', 'nostatus') != 'nostatus':
-                p1_status += 1
-            if p2_state.get('status', 'nostatus') != 'nostatus':
-                p2_status += 1
+            
+            p1_status = p1_state.get('status', 'nostatus')
+            p2_status = p2_state.get('status', 'nostatus')
+
+            if p1_status == 'par': p1_par_turns += 1
+            elif p1_status == 'slp': p1_slp_turns += 1
+            elif p1_status == 'brn': p1_brn_turns += 1
+            elif p1_status == 'tox': p1_tox_turns += 1
+
+            if p2_status == 'par': p2_par_turns += 1
+            elif p2_status == 'slp': p2_slp_turns += 1
+            elif p2_status == 'brn': p2_brn_turns += 1
+            elif p2_status == 'tox': p2_tox_turns += 1
+            
+            # Keep your old net_status just in case
+            if p1_status != 'nostatus': p1_net_status += 1
+            if p2_status != 'nostatus': p2_net_status += 1
+
+            
+            #if p1_state.get('status', 'nostatus') != 'nostatus':
+                #p1_status += 1
+            #if p2_state.get('status', 'nostatus') != 'nostatus':
+                #p2_status += 1
 
             # A feature on switch - we have to check at each turn if there is a move
             # and is it alive(this is to distinguish switch from faint)
@@ -481,7 +504,7 @@ def build_features(battles, type_chart, avrg_stats):
         p2_team_sum_hp = sum(p2_current_hp.values())
         delta_sum_hp = p1_team_sum_hp - p2_team_sum_hp
 
-        # number of pokemon appeared ach battle
+        # number of pokemon appeared each battle
         p1_team_pok_count = len(p1_current_hp)
         p2_team_pok_count = len(p2_current_hp)
             
@@ -517,7 +540,12 @@ def build_features(battles, type_chart, avrg_stats):
         net_max_spe_boost = p1_max_spe_boost - p2_max_spe_boost
         net_boosted_turns = p1_boosted_turns - p2_boosted_turns 
 
-        net_status = p1_status - p2_status
+        net_par_turns = p1_par_turns - p2_par_turns,
+        net_slp_turns =  p1_slp_turns - p2_slp_turns,
+        net_brn_turns =  p1_brn_turns - p2_brn_turns,
+        net_tox_turns =  p1_tox_turns - p2_tox_turns,
+        net_status = p1_net_status - p2_net_status
+        
 
         p1_switch_rate = p1_switch/total_turns
 
@@ -597,6 +625,10 @@ def build_features(battles, type_chart, avrg_stats):
             #'p2_power_normalized': p2_power_normalized,
             'relative_damage_byp2': p2_avrg_accuracy * p2_power_normalized,
             #'net_boosts': net_boosts,
+            'net_par_turns':net_par_turns,
+            'net_slp_turns':net_slp_turns,
+            'net_brn_turns':net_brn_turns,
+            'net_tox_turns':net_tox_turns,
             'net_status': net_status,
             'net_max_off_boost': net_max_off_boost,
             'net_max_spe_boost': net_max_spe_boost,
