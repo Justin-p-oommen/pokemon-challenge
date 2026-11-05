@@ -33,7 +33,7 @@ def get_tuned_xgboost():
 
 
 # combination of lr and xgb model
-def get_ensemble_model():
+def get_ensemble_model(weight_lr=3, weight_xgb=1):
     
     #Combines Logistic Regression and XGBoost using Soft Voting.
     #Soft voting averages the predicted probabilities of both models.
@@ -65,7 +65,7 @@ def train_and_evaluate(df, model, model_name, cv_splits, target_col='player_won'
     # Split data
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
-    # Train model
+    # Train the clone model so we don't modify the original before CV
     val_model = clone(model)
     val_model.fit(X_train, y_train)
 
@@ -84,10 +84,15 @@ def train_and_evaluate(df, model, model_name, cv_splits, target_col='player_won'
      #   print(" No Overfitting. Generalizes perfectly.")
         
     # K-fold validation
-    print(f"\n--- {n_splits}-Fold RepeatStratified Cross-Validation ---")
+    print(f"\n--- RepeatStratified Cross-Validation ---")
     
     #cv = RepeatedStratifiedKFold(n_splits=n_splits, random_state=42)
     #cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=3, random_state=42)
+    # shared CV Splits
+    if cv_splits is None:
+        cv = RepeatedStratifiedKFold(n_splits=5, n_repeats=3, random_state=42)
+        cv_splits = list(cv.split(X, y))
+        
     cv_scores = cross_val_score(clone(model), X, y, cv=cv_splits, scoring='accuracy', n_jobs=-1)
     
     #for i, score in enumerate(cv_scores):
