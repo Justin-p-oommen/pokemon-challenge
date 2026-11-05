@@ -5,33 +5,17 @@ from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold, cross_val_score
 from sklearn.metrics import accuracy_score
+from sklearn.base import clone
 
-
-def get_logistic_regression():
+# logistic regression (want to test different C and penalties)
+def get_logistic_regression(C=0.1, penalty='l1'):
     # returns a regularized Logistic Regression pipeline
     return make_pipeline(
         StandardScaler(),
-        LogisticRegression(penalty='l1', solver='liblinear', C=0.1, max_iter=1000, random_state=42)
+        LogisticRegression(penalty=penalty, solver='liblinear', C=C, max_iter=3000, random_state=42)
     )
 
-def get_random_forest():
-    # returns a regularized Random Forest
-    return RandomForestClassifier(
-        n_estimators=300, max_depth=6, min_samples_leaf=30, random_state=42, n_jobs=-1
-    )
-
-# my model
-'''
-def get_tuned_xgboost():
-    # returns the heavily tuned XGBoost model
-    return xgb.XGBClassifier(
-        n_estimators=1000, learning_rate=0.01, max_depth=3, min_child_weight=5,
-        subsample=0.7, colsample_bytree=0.7, reg_alpha=1.0, reg_lambda=1.0,
-        random_state=42, eval_metric='logloss', n_jobs=-1
-    )
-'''
-
-# tune1
+# tuned xgb model
 def get_tuned_xgboost():
     return xgb.XGBClassifier(
         n_estimators=1000,
@@ -47,23 +31,6 @@ def get_tuned_xgboost():
         n_jobs=-1
     )
 
-'''
-# tune2
-def get_tuned_xgboost():
-    return xgb.XGBClassifier(
-        n_estimators=1000,
-        learning_rate=0.01,
-        max_depth=3,
-        min_child_weight=10,
-        subsample=0.8,
-        colsample_bytree=0.8,
-        reg_alpha=1.5,
-        reg_lambda=2.0,
-        random_state=42,
-        eval_metric='logloss',
-        n_jobs=-1
-    )
-'''
 
 # combination of lr and xgb model
 def get_ensemble_model():
@@ -73,16 +40,17 @@ def get_ensemble_model():
     
     return VotingClassifier(
         estimators=[
-            ('lr', get_logistic_regression()),
+            ('lr', get_logistic_regression(C=0.1, penalty='l2')), # used l2
             ('xgb', get_tuned_xgboost())
         ],
-        voting='soft', # Averages probabilities (better than 'hard' voting)
+        voting='soft', # averages probabilities
+        weights=[weight_lr, weight_xgb],
         n_jobs=-1
     )
 
 
 
-def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols=['battle_id'], n_splits=5):
+def train_and_evaluate(df, model, model_name, cv_splits, target_col='player_won', drop_cols=['battle_id']):
 
     print(f"\n{'='*45}")
     print(f"TRAINING: {model_name}")
@@ -98,31 +66,32 @@ def train_and_evaluate(df, model, model_name, target_col='player_won', drop_cols
     X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.2, random_state=42, stratify=y)
 
     # Train model
-    model.fit(X_train, y_train)
+    val_model = clone(model)
+    val_model.fit(X_train, y_train)
 
     # Evaluate
-    train_acc = accuracy_score(y_train, model.predict(X_train))
-    test_acc = accuracy_score(y_test, model.predict(X_test))
+    train_acc = accuracy_score(y_train,val_model.predict(X_train))
+    test_acc = accuracy_score(y_test, val_model.predict(X_test))
     gap = train_acc - test_acc
 
     print(f"Train Accuracy:  {train_acc * 100:.2f}%")
     print(f"Test Accuracy:   {test_acc * 100:.2f}%")
     print(f"Overfitting Gap: {gap * 100:.2f}%\n")
 
-    if gap > 0.05:
-        print(" High Overfitting !!!")
-    elif gap < -0.02:
-        print(" No Overfitting. Generalizes perfectly.")
+    #if gap > 0.05:
+     #   print(" High Overfitting !!!")
+    #elif gap < -0.02:
+     #   print(" No Overfitting. Generalizes perfectly.")
         
     # K-fold validation
-    print(f"\n--- {n_splits}-Fold Stratified Cross-Validation ---")
+    print(f"\n--- {n_splits}-Fold RepeatStratified Cross-Validation ---")
     
     #cv = RepeatedStratifiedKFold(n_splits=n_splits, random_state=42)
-    cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=3, random_state=42)
-    cv_scores = cross_val_score(model, X, y, cv=cv, scoring='accuracy')
+    #cv = RepeatedStratifiedKFold(n_splits=n_splits, n_repeats=3, random_state=42)
+    cv_scores = cross_val_score(clone(model), X, y, cv=cv_splits, scoring='accuracy', n_jobs=-1)
     
-    for i, score in enumerate(cv_scores):
-        print(f"Fold {i+1}: {score * 100:.2f}%")
+    #for i, score in enumerate(cv_scores):
+     #   print(f"Fold {i+1}: {score * 100:.2f}%")
         
     print(f"\nMean CV Accuracy: {cv_scores.mean() * 100:.2f}% (+/- {cv_scores.std() * 100:.2f}%)")
 
