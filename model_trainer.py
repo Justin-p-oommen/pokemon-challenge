@@ -8,7 +8,8 @@ trains them, and evaluates how well they predict if Player 1 will win.
 
 The code has two main models:
 1. Logistic Regression: A simple linear model that uses L1 or L2 penalty to prevent overfitting.
-2. XGBoost: A powerful tree-based model tuned to be conservative (shallow trees) so it generalizes well.
+2. 2. Random Forest: A bagging tree-based model.
+3. XGBoost: A powerful tree-based model tuned to be conservative (shallow trees) so it generalizes well.
 
 It also contains the evaluation function. This function does an 80/20 split to check the overfitting gap, and then uses 15-Fold Cross-Validation (5 splits repeated 3 times) to get a reliable accuracy score.
 
@@ -19,6 +20,7 @@ Output: The trained model and print statements showing the accuracy scores.
 
 import xgboost as xgb
 from sklearn.linear_model import LogisticRegression
+from sklearn.ensemble import RandomForestClassifier
 from sklearn.pipeline import make_pipeline
 from sklearn.preprocessing import StandardScaler
 from sklearn.model_selection import train_test_split, RepeatedStratifiedKFold, cross_val_score
@@ -34,6 +36,20 @@ def get_logistic_regression(C=0.1, penalty='l1'):
         StandardScaler(),
         LogisticRegression(penalty=penalty, solver='liblinear', C=C, max_iter=3000, random_state=42)
     )
+
+# Random Forest Model
+def get_random_forest():
+    # Returns a regularized Random Forest.
+    # I limited the depth (6) and increased the minimum samples per leaf (30) 
+    # to prevent the trees from memorizing the training data.
+    return RandomForestClassifier(
+        n_estimators=300, 
+        max_depth=6, 
+        min_samples_leaf=30, 
+        random_state=42, 
+        n_jobs=-1
+    )
+
 
 # tuned xgb model
 def get_tuned_xgboost():
